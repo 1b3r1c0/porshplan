@@ -1,8 +1,10 @@
 
 fh = open('otherlisted.txt')
 
-
+tickers = []
 
 for line in fh :
     end_ticker = line.find('|')
-    print(line[0:end_ticker])
+    tickers.append(line[0:end_ticker])
+
+print(tickers)
