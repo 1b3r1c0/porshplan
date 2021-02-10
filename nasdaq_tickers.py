@@ -2,10 +2,24 @@ import yfinance as yf
 from datetime import datetime
 from pathlib import Path
 
+# Specifiy how close the current price should be to a stock's 52 week low
+# For example, a value of .05 would mean within 5%
+WITHIN = .01
+
 # todo add a function to this script for creating the nasdaqlisted.txt file
+# Specify the filename of the file containing stock tickers. Must be formated like this:
+# Symbol|Security Name|Market Category|Test Issue|Financial Status|Round Lot Size|ETF|NextShares
+# AAON|AAON, Inc. - Common Stock|Q|N|N|100|N|N
 TEXT_FILE_WITH_TICKERS = 'nasdaqlisted.txt'
-# debug TEXT_FILE_WITH_TICKERS = 'TEST.txt'
+# For debugging/testing use a file just a few entries
+# TEXT_FILE_WITH_TICKERS = 'TEST.txt'
+
+# Daily pulls of stock info are saved in this file in the same folder as this script
+# Example filename: stock-info-2021-02-10.csv
 FILENAME_STOCK_INFO = "stock-info-"
+
+# Daily findings of stocks close to their 52-week lows are saved here
+# Example filename: lows-2021-02-10.csv
 FILENAME_LOWS = 'lows-'
 
 def get_stock_tickers(ticker_file) :
@@ -103,7 +117,7 @@ def get_lows(file_name_input, file_name_output) :
         # print(symbol, percentage)
 
         # check if the stock is within 5% of its 52 week low
-        if percentage < 5.05 :
+        if percentage < WITHIN :
             # Add the line to a list
             fh_lows.write(line)
 
@@ -114,7 +128,7 @@ def get_lows(file_name_input, file_name_output) :
 # Get a list of stock tickers to evaluate
 tickers = get_stock_tickers(TEXT_FILE_WITH_TICKERS)
 
-# Create a filename with date to save the stock info in
+# Create a filename with date to save the stock info in and whether or not the file exists
 fileNameStockData, exists = create_file_name(FILENAME_STOCK_INFO, '.csv')
 
 if exists :
