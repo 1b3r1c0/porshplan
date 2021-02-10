@@ -2,15 +2,12 @@ import yfinance as yf
 from datetime import datetime
 from pathlib import Path
 
-# todo: add a function to this script for creating the nasdaqlisted.txt file
+# todo add a function to this script for creating the nasdaqlisted.txt file
 TEXT_FILE_WITH_TICKERS = 'nasdaqlisted.txt'
+# debug TEXT_FILE_WITH_TICKERS = 'TEST.txt'
 FILENAME_STOCK_INFO = "stock-info-"
-FILENAME_STOCK_INFO_EXTENSION = ".csv"
+FILENAME_LOWS = 'lows-'
 
-# # Initialize vars
-# tickers = []
-# lows = []
-#
 def get_stock_tickers(ticker_file) :
 
     # example lines from text file:
@@ -48,6 +45,7 @@ def create_file_name(name_before_date, file_extension) :
         return(file_name, False)
 
 def get_stock_info(symbols, file_name) :
+    # todo we should save other useful info about the potential low stocks here
     list_of_dicts = []
     # Loop through each of the symbols
     for symbol in symbols:
@@ -66,61 +64,68 @@ def get_stock_info(symbols, file_name) :
         except:
             continue
 
+    # Open a filehandle as "a"ppend
+    fh_stock_info = open(file_name, 'a')
 
-    # Create a line to save in the CSV
-    # list_of_dicts = symbol + "," + stock52WeekLow + "," + stockCurrentPrice
+    for dict in list_of_dicts:
+        try:
+            line = dict['symbol'] + "," + str(dict['fiftyTwoWeekLow']) + "," + str(dict['regularMarketPreviousClose'])
+            fh_stock_info.write(line)
+            fh_stock_info.write("\n")
+        except:
+           continue
+
+    fh_stock_info.close()
+
+def get_lows(file_name_input, file_name_output) :
+    # Input: filename for CSV containing symbol,52wlow,current
+    # output: CSV containing symbol,52wlow,current for symbols within 5% of their 52 week lows
+
+    with open(file_name_input) as fh:
+        lines = fh.readlines()
+
+    # create a filename using the current date
+    output_file_name_date = create_file_name(file_name_output, '.csv' )
+
+    # todo when lows already exists, delete it or overwrite it or something
+    # Open a filehandle as "a"ppend
+    # output_file_name_date is a tuple with 2 elements
+    fh_lows = open(output_file_name_date[0], 'a')
+
+    for line in lines :
+        data = line.rstrip().split(",")
+
+        symbol = data[0]
+        ftwl = float(data[1])
+        current = float(data[2])
+        percentage = (current - ftwl) / ftwl
+        # print("percentage current within 52 week low")
+        # print(symbol, percentage)
+
+        # check if the stock is within 5% of its 52 week low
+        if percentage < 5.05 :
+            # Add the line to a list
+            fh_lows.write(line)
+
+    fh_lows.close()
 
 # if __name__ == '__main__':
 
 # Get a list of stock tickers to evaluate
 tickers = get_stock_tickers(TEXT_FILE_WITH_TICKERS)
-# print(tickers)
 
 # Create a filename with date to save the stock info in
-fileName, exists = create_file_name(FILENAME_STOCK_INFO, FILENAME_STOCK_INFO_EXTENSION)
-# print(fileName, exists)
+fileNameStockData, exists = create_file_name(FILENAME_STOCK_INFO, '.csv')
 
-# Test if the file already exists
 if exists :
-    print("file exists do something")
-    #     # Open a filehandle as "a"ppend
-
-#     fhStockInfo = open(fileName, 'a')
+    # Just get the lows when the data has already been downloaded
+    get_lows(fileNameStockData, FILENAME_LOWS)
 else:
-    get_stock_info(tickers, fileName)
-    # print("file DOesn't exist do something else")
-#     # Open a filehandle as "a"ppend
-#     fhStockInfo = open(fileName, 'a')
-#
-
-#
-# check if the stock is within 5% of its 52 week low
-# if ((stockCurrentPrice - stock52WeekLow) / stockCurrentPrice) < .05:
-    # Add the symbol to a list
-#    lows.append(ticker)
-    # debug
-    # print(
-    #     "lows:",lows,
-    #     ", ticker:",ticker,
-    #     ", stock52WeekLow:",stock52WeekLow,
-    #     ", stockCurrentPrice:",stockCurrentPrice
-    # )
-    # junk =input("paused")
-
-# todo we should print out other useful info about the lows here
-#print("Found these lows that may be worth checking out")
-#for low in lows:
-#    print(low)
-
-# todo: download the 52 week low and current price for each stock
-# todo check if the data has already been downloaded for the current day
-# todo use the day's stored data instead of re-downloading it each time the script is run
+    # First download the data (takes a very long time)
+    get_stock_info(tickers, fileNameStockData)
+    # get the lows after the data has been downloaded
+    get_lows(fileNameStockData, FILENAME_LOWS)
 
 # Download stock data then export as CSV
 # data_df = yf.download("AAPL", start="2020-02-01", end="2020-03-20")
 # data_df.to_csv('aapl.csv')
-
-# debug        print (tickers)        junk =input("paused")
-# debug  print(len(tickers)) #junk =input("paused")
-# debug        print("write: no exception") ; input("RTN to continue, CTL+c to stop")
-# debug        print("open: no exception") ; input("RTN to continue, CTL+c to stop")
