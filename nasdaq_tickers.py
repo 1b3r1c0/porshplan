@@ -2,6 +2,7 @@ import yfinance as yf
 from datetime import datetime
 from pathlib import Path
 
+
 # Specifiy how close the current price should be to a stock's 52 week low
 # For example, a value of .05 would mean within 5%
 WITHIN = .01
